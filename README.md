@@ -136,7 +136,7 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'Cacao Performance v__VERSION__'
           releaseBody: 'See release notes for full details.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
 ```
 

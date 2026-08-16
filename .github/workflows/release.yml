@@ -56,6 +56,6 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'Cacao Performance v__VERSION__'
           releaseBody: 'Release binaries for Linux, Windows, and macOS.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
