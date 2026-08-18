@@ -1,18 +1,18 @@
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, Window, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 #[tauri::command]
-pub fn drag_window(window: Window) -> Result<(), String> {
+pub fn drag_window(window: WebviewWindow) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn window_minimize(window: Window) -> Result<(), String> {
+pub fn window_minimize(window: WebviewWindow) -> Result<(), String> {
     window.minimize().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn window_maximize(window: Window) -> Result<(), String> {
+pub fn window_maximize(window: WebviewWindow) -> Result<(), String> {
     if window.is_maximized().unwrap_or(false) {
         window.unmaximize().map_err(|e| e.to_string())
     } else {
@@ -21,7 +21,7 @@ pub fn window_maximize(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn window_close(window: Window) -> Result<(), String> {
+pub fn window_close(window: WebviewWindow) -> Result<(), String> {
     window.close().map_err(|e| e.to_string())
 }
 
@@ -80,13 +80,10 @@ pub fn spawn_widget_window(app: AppHandle, config: WidgetConfig) -> Result<Strin
         _ => (280.0, 180.0),
     };
 
-    let encoded_id = config.id.clone();
-    let url = format!("index.html#/widget?id={}", encoded_id);
-
     let builder = WebviewWindowBuilder::new(
         &app,
         &window_label,
-        WebviewUrl::App(url.into()),
+        WebviewUrl::App("index.html".into()),
     )
     .title(&config.title)
     .inner_size(width, height)

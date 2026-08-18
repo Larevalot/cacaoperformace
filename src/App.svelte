@@ -7,13 +7,21 @@
   import WidgetView from './lib/components/WidgetView.svelte';
   import type { SystemMetrics } from './lib/types';
   import { invoke } from '@tauri-apps/api/core';
+  import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
   let isWidgetWindow = $state(false);
 
   $effect(() => {
     // Check if running as standalone widget window
-    if (window.location.hash.includes('#/widget')) {
-      isWidgetWindow = true;
+    try {
+      const currentWin = getCurrentWebviewWindow();
+      if (currentWin.label.startsWith('widget_') || window.location.hash.includes('#/widget')) {
+        isWidgetWindow = true;
+      }
+    } catch {
+      if (window.location.hash.includes('#/widget')) {
+        isWidgetWindow = true;
+      }
     }
 
     // Telemetry Fast Polling Loop (1000ms) for CPU, GPU, RAM, Disk & Process count

@@ -86,6 +86,7 @@
     position: relative;
     width: 100%;
     user-select: none;
+    z-index: 50;
   }
 
   .custom-select-trigger {

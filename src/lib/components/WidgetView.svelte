@@ -2,6 +2,7 @@
   import { appStore, defaultWidgetConfig } from '../stores/appState.svelte';
   import WidgetPreview from './WidgetPreview.svelte';
   import type { WidgetConfig } from '../types';
+  import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
   let widgetConfig = $state<WidgetConfig>({ ...defaultWidgetConfig });
 
@@ -10,9 +11,19 @@
     document.documentElement.classList.add('widget-mode');
     document.body.classList.add('widget-mode');
 
-    // Parse URL params for widget ID
-    const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const id = urlParams.get('id');
+    // Retrieve widget ID from window label or URL params
+    let id: string | null = null;
+    try {
+      const currentWin = getCurrentWebviewWindow();
+      if (currentWin.label.startsWith('widget_')) {
+        id = currentWin.label.replace('widget_', '');
+      }
+    } catch {}
+
+    if (!id) {
+      const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+      id = urlParams.get('id');
+    }
 
     if (id) {
       const saved = appStore.savedWidgets.find(w => w.id === id);

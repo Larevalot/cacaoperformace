@@ -2,7 +2,7 @@
   import type { WidgetConfig, SystemMetrics } from '../types';
   import { formatTemp } from '../stores/appState.svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
   let { config, metrics, isWindow = false }: { config: WidgetConfig; metrics: SystemMetrics; isWindow?: boolean } = $props();
 
@@ -20,17 +20,17 @@
 
   async function handleMouseDown(e: MouseEvent) {
     const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-    if (targetTag === 'input' || targetTag === 'button' || targetTag === 'select' || targetTag === 'option') {
+    if (targetTag === 'input' || targetTag === 'button' || targetTag === 'select' || targetTag === 'option' || (e.target as HTMLElement)?.closest('button')) {
       return;
     }
 
     if (e.button === 0) {
       try {
-        await invoke('drag_window');
+        const appWindow = getCurrentWebviewWindow();
+        await appWindow.startDragging();
       } catch {
         try {
-          const appWindow = getCurrentWindow();
-          await appWindow.startDragging();
+          await invoke('drag_window');
         } catch {
           // Dev web preview fallback
         }
@@ -41,11 +41,11 @@
   async function handleWidgetClose(e: MouseEvent) {
     e.stopPropagation();
     try {
-      await invoke('window_close');
+      const appWindow = getCurrentWebviewWindow();
+      await appWindow.close();
     } catch {
       try {
-        const appWindow = getCurrentWindow();
-        await appWindow.close();
+        await invoke('window_close');
       } catch {
         // Dev preview fallback
       }
@@ -97,6 +97,7 @@
   let fontFamily = $derived(config.font_family || 'Montserrat');
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
   class="widget-box {isWindow ? 'tauri-drag-region' : ''}"
   data-tauri-drag-region

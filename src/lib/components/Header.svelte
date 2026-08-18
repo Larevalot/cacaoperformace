@@ -3,6 +3,7 @@
   import type { Language } from '../types';
   import CustomSelect from './CustomSelect.svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
   let isMobileMenuOpen = $state(false);
   let updateStatus = $state<{ checking: boolean; message: string | null }>({ checking: false, message: null });
@@ -38,30 +39,62 @@
     appStore.setTempUnit(appStore.tempUnit === 'C' ? 'F' : 'C');
   }
 
-  // Window Titlebar Action Handlers via Rust IPC
+  // Window Titlebar Action Handlers with Cross-Platform Resilience
   async function handleMinimize() {
     try {
-      await invoke('window_minimize');
-    } catch {}
+      const appWindow = getCurrentWebviewWindow();
+      await appWindow.minimize();
+    } catch {
+      try {
+        await invoke('window_minimize');
+      } catch {}
+    }
   }
 
   async function handleMaximize() {
     try {
-      await invoke('window_maximize');
-    } catch {}
+      const appWindow = getCurrentWebviewWindow();
+      await appWindow.toggleMaximize();
+    } catch {
+      try {
+        await invoke('window_maximize');
+      } catch {}
+    }
   }
 
   async function handleClose() {
     try {
-      await invoke('window_close');
-    } catch {}
+      const appWindow = getCurrentWebviewWindow();
+      await appWindow.close();
+    } catch {
+      try {
+        await invoke('window_close');
+      } catch {}
+    }
   }
 
   async function handleStartDrag(e: MouseEvent) {
-    if (e.button !== 0 || (e.target as HTMLElement)?.closest('button') || (e.target as HTMLElement)?.closest('.custom-select-wrapper')) return;
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('.custom-select-wrapper') ||
+      target.closest('.titlebar-right') ||
+      target.closest('.nav-tabs') ||
+      target.closest('.mobile-drawer-overlay')
+    ) {
+      return;
+    }
     try {
-      await invoke('drag_window');
-    } catch {}
+      const appWindow = getCurrentWebviewWindow();
+      await appWindow.startDragging();
+    } catch {
+      try {
+        await invoke('drag_window');
+      } catch {}
+    }
   }
 </script>
 
@@ -236,13 +269,16 @@
   <div
     class="mobile-drawer-overlay"
     onclick={() => isMobileMenuOpen = false}
+    onkeydown={(e) => { if (e.key === 'Escape') isMobileMenuOpen = false; }}
     role="presentation"
   >
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="mobile-drawer-card"
       onclick={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
+      aria-label="Mobile Navigation Menu"
       tabindex="-1"
     >
       <div class="mobile-nav-list flex-col gap-2">
@@ -350,7 +386,7 @@
     z-index: 1000;
     width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .titlebar-left {
@@ -454,12 +490,14 @@
     white-space: nowrap;
     -webkit-app-region: no-drag;
     app-region: no-drag;
+    overflow: visible;
   }
 
   .desktop-controls {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    overflow: visible;
   }
 
   .mobile-menu-btn {
@@ -512,6 +550,8 @@
   .lang-select-wrapper {
     width: 110px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1001;
   }
 
   .titlebar-divider {
@@ -587,6 +627,8 @@
     flex-direction: column;
     gap: 0.75rem;
     height: fit-content;
+    overflow: visible;
+    position: relative;
   }
 
   .mobile-nav-item {

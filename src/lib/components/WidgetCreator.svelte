@@ -65,8 +65,9 @@
     try {
       const windowLabel = await invoke<string>('spawn_widget_window', { config: appStore.activeWidgetConfig });
       statusMsg = appStore.t('widget_launched_msg') + ` (${windowLabel})`;
-    } catch {
-      statusMsg = appStore.t('widget_launched_msg');
+    } catch (err) {
+      console.error('Launch widget error:', err);
+      statusMsg = `Error: ${err}`;
     } finally {
       setTimeout(() => statusMsg = null, 4000);
     }
